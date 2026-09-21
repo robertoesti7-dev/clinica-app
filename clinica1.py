@@ -22,6 +22,7 @@ st.set_page_config(
     layout="wide"
 )
 
+# Inicializar la sesión de forma segura
 if "usuario_logueado" not in st.session_state:
     st.session_state["usuario_logueado"] = None
 
@@ -79,12 +80,8 @@ def vista_admin():
                     st.error("Contraseña de administrador incorrecta.")
                 else:
                     try:
-                        # Si es doctor, borramos primero de la tabla doctores para mantener integridad referencial
                         supabase.table("doctores").delete().eq("persona_id", id_usuario_a_borrar).execute()
-                        
-                        # Borramos de la tabla personas
-                        res_del = supabase.table("personas").delete().eq("id", id_usuario_a_borrar).execute()
-                        
+                        supabase.table("personas").delete().eq("id", id_usuario_a_borrar).execute()
                         st.success("¡Usuario eliminado correctamente del sistema!")
                         st.rerun()
                     except Exception as e:
@@ -319,14 +316,14 @@ def vista_paciente():
                         b_col1, b_col2 = st.columns(2)
                         
                         with b_col1:
-                            if st.button("Cancelar cita", key=f"conf_canc_{item['id']}"):
+                            if st.button("Sí, cancelar", key=f"conf_canc_{item['id']}"):
                                 supabase.table("consultas").update({"estado": "cancelada"}).eq("id", item["id"]).execute()
                                 st.success("Cita cancelada correctamente.")
                                 st.session_state[f"dialog_cancel_{item['id']}"] = False
                                 st.rerun()
                                 
                         with b_col2:
-                            if st.button("Reprogramar cita", key=f"conf_reprog_{item['id']}"):
+                            if st.button("Reprogramar", key=f"conf_reprog_{item['id']}"):
                                 st.session_state[f"dialog_cancel_{item['id']}"] = False
                                 st.session_state[f"dialog_reprog_{item['id']}"] = True
                                 st.rerun()
