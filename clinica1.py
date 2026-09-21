@@ -1,6 +1,5 @@
 import streamlit as st
 from supabase import create_client, Client
-import extra_streamlit_components as stx
 
 # ==========================================
 # 1. CONFIGURACIÓN Y CONEXIÓN A SUPABASE
@@ -23,20 +22,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# Inicializar gestor de cookies para persistencia ante F5
-cookie_manager = stx.CookieManager()
-
-# Inicializar la sesión de forma segura
 if "usuario_logueado" not in st.session_state:
     st.session_state["usuario_logueado"] = None
-
-# Intentar recuperar la sesión desde la cookie si no está en memoria
-if st.session_state["usuario_logueado"] is None:
-    cedula_cookie = cookie_manager.get(cookie="clinica_user_cedula")
-    if cedula_cookie:
-        res_cookie = supabase.table("personas").select("*").eq("cedula", cedula_cookie).execute()
-        if res_cookie.data:
-            st.session_state["usuario_logueado"] = res_cookie.data[0]
 
 
 # ==========================================
@@ -92,8 +79,12 @@ def vista_admin():
                     st.error("Contraseña de administrador incorrecta.")
                 else:
                     try:
+                        # Si es doctor, borramos primero de la tabla doctores para mantener integridad referencial
                         supabase.table("doctores").delete().eq("persona_id", id_usuario_a_borrar).execute()
-                        supabase.table("personas").delete().eq("id", id_usuario_a_borrar).execute()
+                        
+                        # Borramos de la tabla personas
+                        res_del = supabase.table("personas").delete().eq("id", id_usuario_a_borrar).execute()
+                        
                         st.success("¡Usuario eliminado correctamente del sistema!")
                         st.rerun()
                     except Exception as e:
@@ -328,14 +319,14 @@ def vista_paciente():
                         b_col1, b_col2 = st.columns(2)
                         
                         with b_col1:
-                            if st.button("Sí, cancelar", key=f"conf_canc_{item['id']}"):
+                            if st.button("Cancelar cita", key=f"conf_canc_{item['id']}"):
                                 supabase.table("consultas").update({"estado": "cancelada"}).eq("id", item["id"]).execute()
                                 st.success("Cita cancelada correctamente.")
                                 st.session_state[f"dialog_cancel_{item['id']}"] = False
                                 st.rerun()
                                 
                         with b_col2:
-                            if st.button("Reprogramar", key=f"conf_reprog_{item['id']}"):
+                            if st.button("Reprogramar cita", key=f"conf_reprog_{item['id']}"):
                                 st.session_state[f"dialog_cancel_{item['id']}"] = False
                                 st.session_state[f"dialog_reprog_{item['id']}"] = True
                                 st.rerun()
@@ -424,8 +415,6 @@ if st.session_state["usuario_logueado"]:
         st.caption(f"Rol: `{usuario['rol'].upper()}`")
         st.divider()
         if st.button("🚪 Cerrar Sesión", use_container_width=True):
-            # Limpiar cookie y sesión
-            cookie_manager.delete("clinica_user_cedula")
             st.session_state["usuario_logueado"] = None
             st.rerun()
 
@@ -451,10 +440,7 @@ else:
         if btn_login:
             res = supabase.table("personas").select("*").eq("cedula", cedula_login).eq("clave", clave_login).execute()
             if res.data:
-                usuario_encontrado = res.data[0]
-                st.session_state["usuario_logueado"] = usuario_encontrado
-                # Guardar en cookie del navegador para que sobreviva al presionar F5
-                cookie_manager.set("clinica_user_cedula", usuario_encontrado["cedula"])
+                st.session_state["usuario_logueado"] = res.data[0]
                 st.success("¡Bienvenido/a!")
                 st.rerun()
             else:
