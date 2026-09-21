@@ -242,7 +242,7 @@ def vista_doctor():
                     st.write(f"👤 **Paciente:** {paciente_nombre}")
                     st.write(f"📅 **Fecha y Hora:** {item.get('fecha_hora')}")
                     st.write(f"📝 **Síntomas:** {item.get('sintomas', 'Sin especificar')}")
-                    st.write(f"🏥 **Diagnóstico:** {item.get('diagnostico')}")
+                    st.write(f"🏥 **Diagnóstico:** {item.get('diagnostico') or 'Sin diagnóstico'}")
         else:
             st.info("Aún no has registrado ningún diagnóstico.")
 
@@ -304,7 +304,7 @@ def vista_paciente():
                     with col_info:
                         st.write(f"👨‍⚕️ **Doctor:** {doctor_nombre} ({item.get('especialidad', 'General')})")
                         st.write(f"📝 **Síntomas:** {item.get('sintomas', 'Sin especificar')}")
-                        st.write(f"📋 **Diagnóstico:** {item.get('diagnostico', 'Pendiente / Sin diagnóstico')}")
+                        st.write(f"📋 **Diagnóstico:** {item.get('diagnostico') or 'Pendiente / Sin diagnóstico'}")
                         st.write(f"📅 **Fecha y Hora:** {item.get('fecha_hora')}")
                         st.write(f"💰 **Costo:** ₲ 250.000 | **Estado:** `{estado_cita}`")
                     
